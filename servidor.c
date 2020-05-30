@@ -1,18 +1,19 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
+#include "def.c"
 
 #define MAX 1024
 
 int maxInactivity = -1;
 int maxExecution = -1;
-char **currentTasks; //fila com as tasks a executar
-//precisa-se do nr e qual é a task -- cria se estrutura pequena com essas duas cenas?
-char **endedTasks;
+Task currentTasks[20]; //Array de tasks a executar
+char **endedTasks; // seque escreve se num ficheiro e n é preciso este array
 
 int readLine(int fd, char* buf, int tam){
 	int j = 0;
@@ -26,12 +27,55 @@ int readLine(int fd, char* buf, int tam){
 	return j;
 }
 
-void executeTask(int fd, char* task) {
+int numCurrentTasks(){
+    int n = 0;
+    for(int i = 0; currentTasks[i] != NULL; i++)
+        n++;
+
+    return n;
+}
+
+void removeCurrentTask(int pid){
+    int i = 0;
+    while(currentTasks[i]->pid != pid)
+        i++;
+    for(int j = i; currentTasks[j] != NULL && currentTasks[j+1] != NULL; j++)
+        currentTasks[j] = currentTasks[j+1];
+}
+
+void executeTask(int fd, Task t) {
+    int f,status;
+    f = fork();
+
+    switch (f){
+    case -1 :
+        perror("fork");
+        break;
+    case 0:
+        printf("Processo-filho com pid %d a executar tarefa %d\n", getpid(), t->num);
+        t->pid = getpid();
+        int pos = numCurrentTasks();
+        printf("%d\n", pos);
+        currentTasks[pos] = newTask(t->num, t->commands, t->pid);
+        printf("NA FILA: tarefa %d a executar %s pelo processo %d\n", currentTasks[pos]->num,
+         currentTasks[pos]->commands, currentTasks[pos]->pid);
+        printf("%d tarefas na fila\n", numCurrentTasks());
+        //Não esta a guardar nao sei porque
+        //Execução do comando
+        _exit(0);
+    default:
+        wait(&status);
+        //check how it ended bla bla
+        break;
+    }
+
     //Tipo a mysystem das aulas
+    write(fd,"Executar", 8);
 }
 
 void listTasks(int fd){
     //Ler as currentTasks e imprimir para o fifo
+    write(fd,"Listar", 6);
 }
 
 void endTask(int task){
@@ -41,13 +85,7 @@ void endTask(int task){
 void history(int fd){
     //Ler as endedTasks e imprimir para o fifo
     //guardar o historico em ficheiro?
-}
-
-void helpGuide(int fd){
-    char coms[MAX];
-    int n;
-    n = sprintf(coms, "tempo-inactividade segs\ntempo-execucao segs\nexecutar 'p1 | p2 ... | pn'\nlistar\nterminar taskNum\nhistorico\n");
-    write(fd, &coms, n);
+    write(fd,"Historico", 9);
 }
 
 int main(int argc, char *argv[]){
@@ -55,6 +93,9 @@ int main(int argc, char *argv[]){
     char buf[MAX];
     char *token, *command;
     char *tokens[20];
+    int numTask = 0;
+    *currentTasks = malloc(sizeof(Task) * 20); //isto cria uma na 1a posiçao
+    printf("%d tarefas\n", numCurrentTasks()); 
 
     //Criação dos fifos
     //Fifo usado pelo servidor para ler o que vem do cliente 
@@ -74,10 +115,10 @@ int main(int argc, char *argv[]){
         perror("open fifo");
         exit(-1);
     }
-
     while((r = readLine(fd_fifoR, buf, sizeof(buf))) > 0){
-        buf[r] = '\0'; //retira \n
+        buf[r] = '\0';
         command = strdup(buf);
+        printf("LEU DO PIPE: %s\n", command);
         int i = 0;
         while((token = strsep(&command, " ")) != NULL){
             tokens[i] = token;
@@ -86,37 +127,39 @@ int main(int argc, char *argv[]){
 
         if(!strcmp(tokens[0], "tempo-inactividade")){
             maxInactivity = atoi(tokens[1]);
+            write(fd_fifoW, "Inatividade definida\n", 21);
         }
         else if (!strcmp(tokens[0], "tempo-execucao")){
             maxExecution = atoi(tokens[1]);
+            write(fd_fifoW, "Execucao max definida\n", 22);
         }
         else if (!strcmp(tokens[0], "executar")){
             int pos = strlen(tokens[0]) + 2;
             char *task = strdup(buf + pos);
             task[strlen(task)-1] = '\0';
-            executeTask(fd_fifoW, task);
+            printf("EXECUTAR TAREFA: %s\n", task);
+            Task t = newTask(numTask, task, -1);
+            numTask++;
+            executeTask(fd_fifoW, t);
         }
         else if (!strcmp(tokens[0], "listar")){
+            printf("LISTAR TAREFAS\n");
             listTasks(fd_fifoW);
         }
         else if (!strcmp(tokens[0], "terminar")){
             int task = atoi(tokens[1]);
+            printf("TERMINAR TAREFA %d\n", task);
+            write(fd_fifoW, "Terminar tarefa\n", 17);
             endTask(task);
         }
         else if (!strcmp(tokens[0], "historico")){
+            printf("HISTORICO DE TAREFAS\n");
             history(fd_fifoW);
-        }
-        else if (!strcmp(tokens[0], "ajuda")){
-            helpGuide(fd_fifoW);
-        }
-        else {
-            char answer[MAX];
-            int n = sprintf(answer, "Comando inválido: %s.\n", tokens[0]);
-            write(fd_fifoW, &answer, n);
         }
 
     }
 
+    free(*currentTasks);
     close(fd_fifoR);
     close(fd_fifoW);
     return 0;
