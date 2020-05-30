@@ -120,7 +120,7 @@ int main(int argc, char *argv[]){
                     if(strcmp(com, "ajuda\n") == 0)
                         helpGuide();
                     else if(parseCommand(com)){
-                        write(fd_fifoW, com, strlen(com));
+                        write(fd_fifoW, &buf, r);
                     }
                     else {
                         char error[MAX];
