@@ -139,7 +139,7 @@ int main(int argc, char *argv[]){
                         int n = sprintf(error, "Comando Inválido: %s\n", com);
                         write(1, &error, n);
                     }
-
+                    bzero(buf, MAX);
                     bzero(answer, MAX);
                     if((r = read(fd_fifoR,&answer,sizeof(answer))) > 0)
                         write(1, &answer, r);

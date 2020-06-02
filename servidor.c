@@ -7,26 +7,16 @@
 #include <string.h>
 #include <stdlib.h>
 #include "def.c"
+#include "aux.c"
 
 #define MAX 1024
+#define MAX_COMANDOS    10
 
 int maxInactivity = -1;
 int maxExecution = -1;
 int indexCur = 0;
 Task *currentTasks; //Array de tasks a executar
-//char **endedTasks; // seque escreve se num ficheiro e n é preciso este array
 
-int readLine(int fd, char* buf, int tam){
-	int j = 0;
-	while(j < tam && read(fd,buf+j,1) > 0 && buf[j] != '\n')
-		j++;
-
-	if(j >= tam)	
-        buf[j] = '\0';
-	else buf[j+1] = '\0';
-
-	return j;
-}
 
 int numCurrentTasks(){
     int n = 0;
@@ -36,6 +26,7 @@ int numCurrentTasks(){
     return n;
 }
 
+/* parece nao ser necessario ja que depois de executar a tarefa sai do array ao fazer _exit
 void removeCurrentTask(int pid){
     int i = 0;
     while(currentTasks[i] != NULL && currentTasks[i]->pid != pid)
@@ -43,10 +34,16 @@ void removeCurrentTask(int pid){
     for(int j = i; currentTasks[j] != NULL && currentTasks[j+1] != NULL; j++)
         currentTasks[j] = currentTasks[j+1];
     indexCur--;
-}
+}*/
+
+
 void executeTask(int fd, Task t) {
     int f,status,p;
     char answer[100];
+
+
+    int n = sprintf(answer, "Tarefa #%d\n", t->num);
+    write(fd,&answer, n);
     f = fork();
 
     switch (f){
@@ -64,18 +61,13 @@ void executeTask(int fd, Task t) {
         printf("NA FILA: tarefa %d a executar %s pelo processo %d\n", currentTasks[pos]->num,
          currentTasks[pos]->commands, currentTasks[pos]->pid);
         printf("%d tarefas na fila\n", numCurrentTasks());
-        //Execução do comando
-        //_exit(0);
-        break;
+        
+        mysystem(t->commands);
     default:
         wait(&status);
-        //check how it ended bla bla
+        //check how it ended i guardar no ficheiro do historico
         break;
     }
-
-    //Tipo a mysystem das aulas
-    int n = sprintf(answer, "Tarefa #%d\n", t->num);
-    write(fd,&answer, n);
 }
 
 void listTasks(int fd){
@@ -100,12 +92,11 @@ void listTasks(int fd){
 }
 
 void endTask(int task){
-    //kill da task, remover das current para as ended
+    //kill da task
 }
 
 void history(int fd){
-    //Ler as endedTasks e imprimir para o fifo
-    //guardar o historico em ficheiro?
+    //Ler do ficheiro do historico
     write(fd,"Historico", 9);
 }
 
