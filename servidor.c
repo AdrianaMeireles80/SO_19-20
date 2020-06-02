@@ -66,6 +66,7 @@ void executeTask(int fd, Task t) {
         printf("%d tarefas na fila\n", numCurrentTasks());
         //Execução do comando
         //_exit(0);
+        break;
     default:
         wait(&status);
         //check how it ended bla bla
@@ -79,7 +80,23 @@ void executeTask(int fd, Task t) {
 
 void listTasks(int fd){
     //Ler as currentTasks e imprimir para o fifo
-    write(fd,"Listar", 6);
+    int i,n=0;
+
+    char aux[MAX],ret[MAX];
+
+    bzero(ret,MAX);
+    
+    for(i=0;currentTasks[i] != NULL;i++){
+               
+        bzero(aux,MAX);
+
+        n += sprintf(aux,"#%d: %s\n",currentTasks[i]->num,currentTasks[i]->commands);
+
+        strcat(ret,aux);
+    }
+
+      write(fd,&ret,n);
+     
 }
 
 void endTask(int task){
