@@ -10,13 +10,16 @@
 #include "aux.c"
 
 #define MAX 1024
-#define MAX_COMANDOS    10
 
 int maxInactivity = -1;
 int maxExecution = -1;
 int indexCur = 0;
 Task *currentTasks; //Array de tasks a executar
 
+
+void alarm_handler(int signum){
+    _exit(1);
+}
 
 int numCurrentTasks(){
     int n = 0;
@@ -38,11 +41,11 @@ void removeCurrentTask(int pid){
 
 
 void executeTask(int fd, Task t) {
-    int f,status,p;
-    char answer[100];
+    int f, status, n;
+    char answer[100], out[MAX];
 
 
-    int n = sprintf(answer, "Tarefa #%d\n", t->num);
+    n = sprintf(answer, "Tarefa #%d\n", t->num);
     write(fd,&answer, n);
     f = fork();
 
@@ -51,9 +54,8 @@ void executeTask(int fd, Task t) {
         perror("fork");
         break;
     case 0:
-        p = getpid();
-        printf("Processo-filho com pid %d a executar tarefa %d\n", p, t->num);
-        t->pid = p;
+        printf("Processo-filho com pid %d a executar tarefa %d\n", getpid(), t->num);
+        t->pid = getpid();
         int pos = numCurrentTasks();
         printf("%d\n", pos);
         currentTasks[indexCur] = newTask(t->num, t->commands, t->pid);
@@ -62,10 +64,31 @@ void executeTask(int fd, Task t) {
          currentTasks[pos]->commands, currentTasks[pos]->pid);
         printf("%d tarefas na fila\n", numCurrentTasks());
         
-        mysystem(t->commands);
+        if(maxExecution != -1)
+            alarm(maxExecution); //se ao fim deste tempo o processo ainda estiver a executar ao receber o sinal o processo da exit
+
+        int ret = mysystem(t->commands);
+        indexCur--; //ao fazer exit dps de executar os comandos na mysystem a tarefa sai do array nao sei pq
+                    //entao temos de diminuir o index, mas n sei se ta correto isto
+        _exit(ret);
     default:
-        wait(&status);
-        //check how it ended i guardar no ficheiro do historico
+        waitpid(f, &status, 0);
+        int hist_fd = open("historico.txt", O_CREAT | O_APPEND | O_WRONLY, 0666);
+        if(WIFEXITED(status)){
+            bzero(out, sizeof(out));
+            if(WEXITSTATUS(status) > 0)
+                n = sprintf(out, "#%d, max execução : %s\n", t->num, t->commands);
+            else 
+                n = sprintf(out, "#%d, concluida : %s\n", t->num, t->commands);
+
+            write(hist_fd, &out, n);
+        }
+        else {
+            bzero(out, sizeof(out));
+            int n = sprintf(out, "#%d, terminada por cliente : %s\n", t->num, t->commands);
+            write(hist_fd, &out, n);
+        }
+        close(hist_fd);
         break;
     }
 }
@@ -107,7 +130,9 @@ int main(int argc, char *argv[]){
     char *tokens[20];
     int numTask = 0;
     currentTasks = malloc(sizeof(Task) * 20);
-    printf("%d tarefas\n", numCurrentTasks()); 
+
+    signal(SIGALRM, alarm_handler);
+
 
     //Criação dos fifos
     //Fifo usado pelo servidor para ler o que vem do cliente 

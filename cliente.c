@@ -46,63 +46,52 @@ int parseCommand(char *com){
     else return 0;
 }
 
-char** parseLinha(char* args[]){
-    char **comandos = malloc(20 * sizeof(char*));
+char* parseLinha(char* args[]){
+    char *comandos;
     int n = 0;
 
-    for(int i = 0; args[i] != NULL; i++){
-        char com[MAX];
-        if(!strcmp(args[i], "-i") && args[i+1] != NULL){
-            bzero(com, MAX);
-            sprintf(com, "tempo-inactividade %d\n", atoi(args[i+1]));
-            comandos[n] = strdup(com);
-            n++;
-            i++;
-        }
-        else if(!strcmp(args[i], "-m") && args[i+1] != NULL){
-            bzero(com, MAX);
-            sprintf(com, "tempo-execucao %d\n", atoi(args[i+1]));
-            comandos[n] = strdup(com);
-            n++;
-            i++;
-        }
-        else if(!strcmp(args[i], "-e") && args[i+1] != NULL){
-            bzero(com, MAX);
-            sprintf(com, "executar \"%s\"\n", args[i+1]);
-            comandos[n] = strdup(com);
-            n++;
-            i++;
-        }
-        else if(!strcmp(args[i], "-l")){
-            bzero(com, MAX);
-            sprintf(com, "listar\n");
-            comandos[n] = strdup(com);
-            n++;
-        }
-        else if(!strcmp(args[i], "-r")){
-            bzero(com, MAX);
-            sprintf(com, "historico\n");
-            comandos[n] = strdup(com);
-            n++;
-        }
-        else if(!strcmp(args[i], "-t") && args[i+1] != NULL){
-            bzero(com, MAX);
-            sprintf(com, "terminar %d\n", atoi(args[i+1]));
-            comandos[n] = strdup(com);
-            n++;
-            i++;
-        }
-        else if(!strcmp(args[i], "-h")){
-            helpGuide();
-        }
-        else {
-            char error[MAX];
-            int n = sprintf(error, "Comando Inválido: %s\n", args[i]);
-            write(1, &error, n); 
-        }
+    int i = 0;
+    char com[MAX];
+    if(!strcmp(args[i], "-i") && args[i+1] != NULL){
+        bzero(com, MAX);
+        sprintf(com, "tempo-inactividade %d\n", atoi(args[i+1]));
+        comandos = strdup(com);
     }
+    else if(!strcmp(args[i], "-m") && args[i+1] != NULL){
+        bzero(com, MAX);
+        sprintf(com, "tempo-execucao %d\n", atoi(args[i+1]));
+        comandos = strdup(com);
+    }
+    else if(!strcmp(args[i], "-e") && args[i+1] != NULL){
+        bzero(com, MAX);
+        sprintf(com, "executar \"%s\"\n", args[i+1]);
+        comandos = strdup(com);
+    }
+    else if(!strcmp(args[i], "-l")){
+        bzero(com, MAX);
+        sprintf(com, "listar\n");
+        comandos = strdup(com);
+    }
+    else if(!strcmp(args[i], "-r")){
+        bzero(com, MAX);
+        sprintf(com, "historico\n");
+        comandos = strdup(com);
+    }
+    else if(!strcmp(args[i], "-t") && args[i+1] != NULL){
+        bzero(com, MAX);
+        sprintf(com, "terminar %d\n", atoi(args[i+1]));
+        comandos = strdup(com);
+    }
+    else if(!strcmp(args[i], "-h")){
+        helpGuide();
+    }
+    else {
+        char error[MAX];
+        int n = sprintf(error, "Comando Inválido: %s\n", args[i]);
+        write(1, &error, n); 
+    }
+
     return comandos;
-    
 }
 
 
@@ -147,17 +136,12 @@ int main(int argc, char *argv[]){
             }
             else { //Pela linha de comandos
                 char **args = argv + 1;
-                char **coms = parseLinha(args);
-                int j = 0;
-                while(coms[j] != NULL){
-                    printf("Comando %i: %s\n", j, coms[j]);
-                    write(fd_fifoW, coms[j], strlen(coms[j]));
-                    bzero(answer, MAX);
-                    if((r = read(fd_fifoR,&answer,sizeof(answer))) > 0)
-                        write(1, &answer, r);
+                char *coms = parseLinha(args);
 
-                    j++;
-                }
+                write(fd_fifoW, coms, strlen(coms));
+                bzero(answer, MAX);
+                if((r = read(fd_fifoR,&answer,sizeof(answer))) > 0)
+                    write(1, &answer, r);
             }          
             _exit(0);
         default:
