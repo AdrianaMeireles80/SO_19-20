@@ -131,11 +131,17 @@ void listTasks(int fd){
 //so da para testar quando o servidor estiver em paralelo
 void endTask(int task){
     //kill da task
-    int i;
+    int i,fd;
+    fd = open("historico.txt",O_WRONLY);
+
      for(i=0;currentTasks[i] != NULL;i++){
-        if(task==currentTasks[i]->num)
+        if(task==currentTasks[i]->num){
             kill(currentTasks[i]->pid,SIGKILL);
+            write(fd,"./argus -t\n",11);
+        }
     }
+    
+    write(fd,"./argus -t\n",11);
 }
 
 void history(int fd){
@@ -146,7 +152,7 @@ void history(int fd){
     int fd2 = open("historico.txt",O_RDONLY);
     lseek(fd2,SEEK_SET,0);//começar a ler a partir do offset q é 0
     bzero(buf,MAX);
-    
+        
     while((r = read(fd2,&buf,sizeof(buf)))>0){
        
         write(fd,&buf,r);
