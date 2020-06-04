@@ -9,6 +9,7 @@
 
 #define MAX 1024
 
+/*
 int readLine(int fd, char* buf, int tam){
     int j = 0;
     while(j < tam && read(fd,buf+j,1) > 0 && buf[j] != '\n')
@@ -20,7 +21,7 @@ int readLine(int fd, char* buf, int tam){
 
     return j;
 }
-
+*/
 void helpGuide(){
     char coms[MAX];
     int n;
@@ -47,7 +48,7 @@ int parseCommand(char *com){
 }
 
 char* parseLinha(char* args[]){
-    char *comandos;
+    char *comandos=malloc(sizeof(char)*MAX);
     int n = 0;
 
     int i = 0;
@@ -121,6 +122,7 @@ int main(int argc, char *argv[]){
                     if(strcmp(com, "ajuda\n") == 0)
                         helpGuide();
                     else if(parseCommand(com)){
+                        lseek(fd_fifoW,SEEK_END,0);
                         write(fd_fifoW, &buf, r);
                     }
                     else {
@@ -138,6 +140,9 @@ int main(int argc, char *argv[]){
                 char **args = argv + 1;
                 char *coms = parseLinha(args);
 
+                write(1, coms, strlen(coms));
+
+                lseek(fd_fifoW,SEEK_END,0);
                 write(fd_fifoW, coms, strlen(coms));
                 bzero(answer, MAX);
                 if((r = read(fd_fifoR,&answer,sizeof(answer))) > 0)
