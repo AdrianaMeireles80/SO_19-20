@@ -140,8 +140,6 @@ void endTask(int task){
             write(fd,"./argus -t\n",11);
         }
     }
-    
-    write(fd,"./argus -t\n",11);
 }
 
 void history(int fd){
