@@ -209,13 +209,11 @@ int main(int argc, char *argv[]){
 
                     if(!strcmp(tokens[0], "tempo-inactividade")){
                         maxInactivity = atoi(tokens[1]);
-                        lseek(fd_fifoW,SEEK_END,0);
                         write(fd_fifoW, "Inatividade definida\n", 21);
                         
                     }
                     else if (!strcmp(tokens[0], "tempo-execucao")){
                         maxExecution = atoi(tokens[1]);
-                        lseek(fd_fifoW,SEEK_END,0);
                         write(fd_fifoW, "Execucao max definida\n", 22);
                         
                     }
@@ -238,7 +236,6 @@ int main(int argc, char *argv[]){
                     else if (!strcmp(tokens[0], "terminar")){
                         int task = atoi(tokens[1]);
                         printf("TERMINAR TAREFA %d\n", task);
-                        lseek(fd_fifoW,SEEK_END,0);
                         write(fd_fifoW, "Terminar tarefa\n", 17);
                         endTask(task);
                        
