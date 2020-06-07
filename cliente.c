@@ -124,29 +124,33 @@ int main(int argc, char *argv[]){
                     else if(parseCommand(com)){
                         lseek(fd_fifoW,SEEK_END,0);
                         write(fd_fifoW, &buf, r);
+
+                        bzero(buf, MAX);
+                        bzero(answer, MAX);
+                        if((r = read(fd_fifoR,&answer,sizeof(answer))) > 0)
+                        write(1, &answer, r);
                     }
                     else {
                         char error[MAX];
                         int n = sprintf(error, "Comando Inválido: %s\n", com);
                         write(1, &error, n);
                     }
-                    bzero(buf, MAX);
-                    bzero(answer, MAX);
-                    if((r = read(fd_fifoR,&answer,sizeof(answer))) > 0)
-                        write(1, &answer, r);
                 }   
             }
             else { //Pela linha de comandos
                 char **args = argv + 1;
                 char *coms = parseLinha(args);
 
-                write(1, coms, strlen(coms));
+                if(strlen(coms) > 0){
+                    write(1, coms, strlen(coms));
 
-                lseek(fd_fifoW,SEEK_END,0);
-                write(fd_fifoW, coms, strlen(coms));
-                bzero(answer, MAX);
-                if((r = read(fd_fifoR,&answer,sizeof(answer))) > 0)
-                    write(1, &answer, r);
+                    lseek(fd_fifoW,SEEK_END,0);
+                    write(fd_fifoW, coms, strlen(coms));
+                    bzero(answer, MAX);
+                    if((r = read(fd_fifoR,&answer,sizeof(answer))) > 0)
+                        write(1, &answer, r);
+                }
+                
             }          
             _exit(0);
         default:
