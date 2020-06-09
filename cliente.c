@@ -49,7 +49,6 @@ int parseCommand(char *com){
 
 char* parseLinha(char* args[]){
     char *comandos=malloc(sizeof(char)*MAX);
-    int n = 0;
 
     int i = 0;
     char com[MAX];

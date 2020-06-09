@@ -47,9 +47,10 @@ void alarm_handler(int signum){
     fd = open("historico.txt", O_CREAT | O_APPEND | O_WRONLY, 0666);
 
     for(int i = 0; currentTasks[i] != NULL; i++){
-        if(currentTasks[i]->pid == getpid())
+        if(currentTasks[i]->pid == getpid()){
             n = sprintf(buf, "#%d, max execução : %s\n", currentTasks[i]->num, currentTasks[i]->commands);
             write(fd, buf, n);
+        }
     }
     close(fd);
     _exit(1);
@@ -66,7 +67,7 @@ void sigchild_handler(int signum){
 
 
 void executeTask(int fd, Task t) {
-    int f, status, n = 0, x = 0;
+    int f, n = 0, x = 0;
     char answer[100], out[MAX];
 
 
@@ -154,7 +155,7 @@ void history(int fd){
 }
 
 int main(int argc, char *argv[]){
-    int f, r, fd_fifoR, fd_fifoW, status;
+    int r, fd_fifoR, fd_fifoW;
     char buf[MAX];
     char *token, *command;
     char *tokens[20];
@@ -209,7 +210,7 @@ int main(int argc, char *argv[]){
                     }
                     else if (!strcmp(tokens[0], "tempo-execucao")){
                         maxExecution = atoi(tokens[1]);
-                        write(fd_fifoW, "Execucao max definida\n", 22);
+                        write(fd_fifoW, "Execucao Max definida\n", 22);
                         
                     }
                     else if (!strcmp(tokens[0], "executar")){
@@ -230,7 +231,6 @@ int main(int argc, char *argv[]){
                     else if (!strcmp(tokens[0], "terminar")){
                         int task = atoi(tokens[1]);
                         printf("TERMINAR TAREFA %d\n", task);
-                        write(fd_fifoW, "Terminar tarefa\n", 17);
                         endTask(task);
                     }
                     else if (!strcmp(tokens[0], "historico")){

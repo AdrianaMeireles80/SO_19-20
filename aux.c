@@ -85,7 +85,7 @@ int exec_command(char* com){
 int mysystem(char *coms){
     int nr_comandos = 0;
     char *comandos[MAX_COMANDOS];
-    char *linha, *token;
+    char *token;
     int fildes[MAX_COMANDOS-1][2];
     int status[MAX_COMANDOS];
 
