@@ -168,9 +168,9 @@ int mysystem(char *coms, int nr_tarefa){
                         bzero(aux, 24);
                         sprintf(aux, "#%d: %d\n", nr_tarefa, nr_linhas);
                         lseek(fdidx, 0, SEEK_END);
-                        write(fdidx, &aux, strlen(aux));
+                        write(fdidx, &aux, strlen(aux)); //escrever o num de cada tarefa e a respetiva posição no ficheiro log.idx
 
-                        dup2(fd, 1); //redirecionar po ficheiro log
+                        dup2(fd, 1); //redirecionar a execução dos comandos para o ficheiro log
                         close(fd);
 
                         dup2(fildes[j-1][0],0);

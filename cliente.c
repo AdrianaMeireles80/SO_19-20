@@ -42,7 +42,7 @@ int parseCommand(char *com){
 
     if(strcmp(tokens[0],"tempo-inatividade") == 0 || strcmp(tokens[0],"tempo-execucao") == 0 || 
         strcmp(tokens[0],"executar") == 0|| strcmp(tokens[0],"listar\n") == 0 || 
-            strcmp(tokens[0],"terminar")  == 0|| strcmp(tokens[0],"historico\n") == 0)
+            strcmp(tokens[0],"terminar")  == 0|| strcmp(tokens[0],"historico\n") == 0 || strcmp(tokens[0],"output") == 0)
         return 1;
     else return 0;
 }
@@ -85,6 +85,11 @@ char* parseLinha(char* args[]){
     else if(!strcmp(args[i], "-h")){
         helpGuide();
     }
+    else if(!strcmp(args[i], "-o") && args[i+1] != NULL){
+        bzero(com, MAX);
+        sprintf(com, "output %d\n", atoi(args[i+1]));
+        comandos = strdup(com);
+    }
     else {
         char error[MAX];
         int n = sprintf(error, "Comando Inválido: %s\n", args[i]);
@@ -126,8 +131,8 @@ int main(int argc, char *argv[]){
 
                         bzero(buf, MAX);
                         bzero(answer, MAX);
-                        if((r = read(fd_fifoR,&answer,sizeof(answer))) > 0)
-                        write(1, &answer, r);
+                        if((r = read(fd_fifoR, &answer, sizeof(answer))) > 0)
+                            write(1, &answer, r);
                     }
                     else {
                         char error[MAX];

@@ -153,6 +153,79 @@ void history(int fd){
         write(fd,&buf,r);
         bzero(buf,MAX);
     }
+    close(fd2);
+}
+
+void readLogs(int fdW, int task){
+	int size = 128;
+	char c[size], aux[size];
+	char log;
+	char *ret;
+	int r = 0, res, fim = -2, i, j;
+	int fd = open("log.idx",O_RDONLY);
+	int fd2 = open("log",O_RDONLY);
+
+	while((r = readLine(fd, &c, size)) > 0){
+		if(c[0] == '#'){
+			bzero(aux, size);
+			for(i = 1; c[i] != ':' && i < size; i++)//encontrar o numero antes de dois pontos que é o num da tarefa
+				aux[i-1] = c[i];
+
+			if(task == atoi(aux) || fim == -1){
+				bzero(aux, size);
+				for(j = 0, i = i + 1; c[i] != '\n' && i < size && j < size; i++){
+					if(c[i] != ' '){
+						aux[j] = c[i]; //guardar o numero que está depois de dois pontos que é a posição em q a tarefa "task" começa no ficheiro log
+						j++;
+					}
+				}
+
+				if(fim == -1){// saber quando se acaba de ler a tarefa atual
+					fim = atoi(aux);
+					printf("Acaba em: %d\n", fim);
+					break;
+				}
+				else{ //saber quando se passa a ler a próxima tarefa
+					res = atoi(aux);
+					printf("Comeca em: %d\n", res);
+					fim = -1;
+				}
+			}
+		}		
+	}
+    
+    i = j = 0;
+    ret = malloc(sizeof(char)*size);
+    bzero(ret, size);
+
+	while((r = read(fd2, &log, 1)) > 0){
+
+		if(i >= res){ 
+			if(i == fim) //quando se encontra o numero máximo de linhas da tarefa pedida sau do ciclo para escrever o resultado no fifo
+				break;
+
+			if(log == '\n') //para ver quantas linhas a partir da posição encontrada
+				i++;
+
+			if(j == size){ //caso se exceda o tamanho 128, para realocar
+				char *auxlogs = strdup(ret);
+				size  = size*2;
+				ret = malloc(sizeof(char)*size);
+				bzero(ret, size);
+				for(int k = 0; k < strlen(auxlogs); k++)
+					ret[k] = auxlogs[k];
+			}
+
+			ret[j++] = log; //guardar o output da tarefa em ret
+
+		}
+
+		if(log == '\n') //para encontrar no ficheiro log a posição a partir do qual começa uma dada task
+			i++;
+	}
+
+	ret[j++] = '\n';
+	write(fdW, ret, j); //escrever no fifo 
 }
 
 int main(int argc, char *argv[]){
@@ -197,59 +270,41 @@ int main(int argc, char *argv[]){
                 tokens[i] = token;
                 i++;
             }
-            //switch(fork()){
-              //  case -1:
-                //    perror("fork");
-                  // break;
 
-                //case 0:
-
-                    if(!strcmp(tokens[0], "tempo-inactividade")){
-                        maxInactivity = atoi(tokens[1]);
-                        write(fd_fifoW, "Inatividade definida\n", 21);
-                        
-                    }
-                    else if (!strcmp(tokens[0], "tempo-execucao")){
-                        maxExecution = atoi(tokens[1]);
-                        write(fd_fifoW, "Execucao Max definida\n", 22);
-                        
-                    }
-                    else if (!strcmp(tokens[0], "executar")){
-                        int pos = strlen(tokens[0]) + 2;
-                        char *task = strdup(buf + pos);
-                        task[strlen(task)-1] = '\0';
-                        printf("EXECUTAR TAREFA: %s\n", task);
-                        Task t = newTask(numTask, task, -1);
-                        numTask++;
-                        executeTask(fd_fifoW, t);
-                    
-                    }
-                    else if (!strcmp(tokens[0], "listar")){
-                        printf("LISTAR TAREFAS\n");         
-                        listTasks(fd_fifoW);
-                      
-                    }
-                    else if (!strcmp(tokens[0], "terminar")){
-                        int task = atoi(tokens[1]);
-                        printf("TERMINAR TAREFA %d\n", task);
-                        endTask(task);
-                    }
-                    else if (!strcmp(tokens[0], "historico")){
-                        printf("HISTORICO DE TAREFAS\n");
-                        history(fd_fifoW);
-                       
-                    }
-
-                    //printf("PUTAS E VINHO VERDE!\n");
-                   // break;
-
-
-                //default:
-
-                    //break;
-
- //            }
-          
+            if(!strcmp(tokens[0], "tempo-inactividade")){
+                maxInactivity = atoi(tokens[1]);
+                write(fd_fifoW, "Inatividade definida\n", 21);
+            }
+            else if (!strcmp(tokens[0], "tempo-execucao")){
+                maxExecution = atoi(tokens[1]);
+                write(fd_fifoW, "Execucao Max definida\n", 22);            
+            }
+            else if (!strcmp(tokens[0], "executar")){
+                int pos = strlen(tokens[0]) + 2;
+                char *task = strdup(buf + pos);
+                task[strlen(task)-1] = '\0';
+                printf("EXECUTAR TAREFA: %s\n", task);
+                Task t = newTask(numTask, task, -1);
+                numTask++;
+                executeTask(fd_fifoW, t);
+            }
+            else if (!strcmp(tokens[0], "listar")){
+	            printf("LISTAR TAREFAS\n");         
+                listTasks(fd_fifoW);
+            }
+            else if (!strcmp(tokens[0], "terminar")){
+                int task = atoi(tokens[1]);
+                printf("TERMINAR TAREFA %d\n", task);
+                endTask(task);
+            }
+            else if (!strcmp(tokens[0], "historico")){
+                printf("HISTORICO DE TAREFAS\n");
+                history(fd_fifoW);
+            }
+            else if (!strcmp(tokens[0], "output")){
+                printf("OUTPUT\n");
+                readLogs(fd_fifoW, atoi(tokens[1]));
+            }
         }
     }
 
