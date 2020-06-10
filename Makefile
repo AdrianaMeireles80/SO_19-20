@@ -9,4 +9,4 @@ cliente:
 	$(CC) -o argus cliente.c
 
 clean:
-	rm -f argus servidor historico.txt fifo1 fifo2
+	rm -f argus servidor historico.txt fifo1 fifo2 log log.idx

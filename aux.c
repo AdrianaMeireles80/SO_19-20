@@ -1,7 +1,9 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/wait.h>
+#include <sys/types.h>
 
 #define MAX_COMANDOS 10
 
@@ -82,12 +84,18 @@ int exec_command(char* com){
 }
 
 //Função que executa uma série de comandos separados por pipes anónimos
-int mysystem(char *coms){
+int mysystem(char *coms, int nr_tarefa){
     int nr_comandos = 0;
     char *comandos[MAX_COMANDOS];
     char *token;
+    char c;
+    char aux[24];
     int fildes[MAX_COMANDOS-1][2];
     int status[MAX_COMANDOS];
+    //para escrever po ficheiro log
+    int fd = open("log", O_CREAT | O_APPEND | O_RDWR, 0666);
+    int fdidx = open("log.idx", O_CREAT | O_APPEND | O_WRONLY, 0666);
+    int r, nr_linhas = 0;
 
     for(int i = 0; (token = strsep(&coms, "|")) != NULL; i++){
         comandos[i] = strdup(token);
@@ -100,7 +108,24 @@ int mysystem(char *coms){
                 perror("fork");
                 return -1;
             case 0:
+                write(fd, "\n", 1);
+                lseek(fd, 0, SEEK_SET);
+               
+                while((r = read(fd, &c, sizeof(c))) > 0){
+                    if(c == '\n')
+                        nr_linhas++;
+                }
+               
+                bzero(aux, 24);
+                sprintf(aux, "#%d: %d\n", nr_tarefa, nr_linhas);
+                lseek(fdidx, 0, SEEK_END);
+                write(fdidx, &aux, strlen(aux));
+
+                dup2(fd, 1); //redirecionar po ficheiro log
+                close(fd);
+
                 exec_command(comandos[0]);
+                               
                 _exit(0);
         }
     }
@@ -132,6 +157,22 @@ int mysystem(char *coms){
                         perror("fork");
                         return -1;
                     case 0:
+                        write(fd, "\n", 1);
+                        lseek(fd, 0, SEEK_SET);
+               
+                        while((r = read(fd, &c, sizeof(c))) > 0){
+                            if(c == '\n')
+                                nr_linhas++;
+                        }
+               
+                        bzero(aux, 24);
+                        sprintf(aux, "#%d: %d\n", nr_tarefa, nr_linhas);
+                        lseek(fdidx, 0, SEEK_END);
+                        write(fdidx, &aux, strlen(aux));
+
+                        dup2(fd, 1); //redirecionar po ficheiro log
+                        close(fd);
+
                         dup2(fildes[j-1][0],0);
                         close(fildes[j-1][0]);
 

@@ -121,7 +121,7 @@ int main(int argc, char *argv[]){
                     if(strcmp(com, "ajuda\n") == 0)
                         helpGuide();
                     else if(parseCommand(com)){
-                        lseek(fd_fifoW,SEEK_END,0);
+                        lseek(fd_fifoW, 0, SEEK_END);
                         write(fd_fifoW, &buf, r);
 
                         bzero(buf, MAX);
@@ -143,7 +143,7 @@ int main(int argc, char *argv[]){
                 if(strlen(coms) > 0){
                     write(1, coms, strlen(coms));
 
-                    lseek(fd_fifoW,SEEK_END,0);
+                    lseek(fd_fifoW, 0, SEEK_END);
                     write(fd_fifoW, coms, strlen(coms));
                     bzero(answer, MAX);
                     if((r = read(fd_fifoR,&answer,sizeof(answer))) > 0)

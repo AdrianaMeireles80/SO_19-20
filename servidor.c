@@ -11,6 +11,7 @@
 
 #define MAX 1024
 
+
 int maxInactivity = -1;
 int maxExecution = -1;
 int indexCur = 0;
@@ -82,21 +83,21 @@ void executeTask(int fd, Task t) {
     case -1 :
         perror("fork");
         break;
-    case 0:     
+    case 0:
+        currentTasks[pos]->pid = getpid(); // atualiza aqui tbm para no handler do alarm conseguir buscar a task
         printf("NA FILA: tarefa %d a executar %s pelo processo %d\n", currentTasks[pos]->num,
          currentTasks[pos]->commands, currentTasks[pos]->pid); 
         printf("%d tarefas na fila\n", numCurrentTasks());
-        currentTasks[pos]->pid = getpid(); // atualiza aqui tbm para no handler do alarm conseguir buscar a task
         //se ao fim deste tempo o processo ainda estiver a executar ao receber o sinal o processo da exit
         if(maxExecution != -1)
             alarm(maxExecution); 
 
         //Executar
-        int ret = mysystem(t->commands);
+        int ret = mysystem(strdup(t->commands), t->num);
         //Escrever no historico
         int fd2 = open("historico.txt", O_CREAT | O_APPEND | O_WRONLY, 0666);
         x = sprintf(out, "#%d, concluida : %s\n", t->num, t->commands);
-        write(fd2,out,x);
+        write(fd2, out, x);
         close(fd2);
 
         _exit(ret);
@@ -146,7 +147,7 @@ void history(int fd){
     int r = 0;
 
     int fd2 = open("historico.txt",O_RDONLY);
-    lseek(fd2,SEEK_SET,0);//começar a ler a partir do offset q é 0
+    lseek(fd2, 0, SEEK_SET);//começar a ler a partir do offset q é 0
         
     while((r = read(fd2,&buf,sizeof(buf)))>0){  
         write(fd,&buf,r);
