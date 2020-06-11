@@ -1,11 +1,7 @@
 CC=gcc
 
-make:	servidor cliente
-
-servidor:	def.c aux.c
+make:	def.c aux.c
 	$(CC) -o servidor servidor.c
-
-cliente:	
 	$(CC) -o argus cliente.c
 
 clean:

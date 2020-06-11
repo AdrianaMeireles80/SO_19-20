@@ -9,9 +9,6 @@
 #include "def.c"
 #include "aux.c"
 
-#define MAX 1024
-
-
 int maxInactivity = -1;
 int maxExecution = -1;
 int indexCur = 0;
@@ -45,7 +42,7 @@ int numCurrentTasks(){
 void alarm_handler(int signum){
     int fd, n = 0;
     char buf[MAX];
-    fd = open("historico.txt", O_CREAT | O_APPEND | O_WRONLY, 0666);
+    fd = open("historico.txt", O_APPEND | O_WRONLY, 0666);
 
     for(int i = 0; currentTasks[i] != NULL; i++){
         if(currentTasks[i]->pid == getpid()){
@@ -95,7 +92,7 @@ void executeTask(int fd, Task t) {
         //Executar
         int ret = mysystem(strdup(t->commands), t->num);
         //Escrever no historico
-        int fd2 = open("historico.txt", O_CREAT | O_APPEND | O_WRONLY, 0666);
+        int fd2 = open("historico.txt", O_APPEND | O_WRONLY, 0666);
         x = sprintf(out, "#%d, concluida : %s\n", t->num, t->commands);
         write(fd2, out, x);
         close(fd2);
@@ -129,7 +126,7 @@ void listTasks(int fd){
 void endTask(int task){
     int i, fd, n = 0;
     char buf[MAX];
-    fd = open("historico.txt", O_CREAT | O_APPEND | O_WRONLY, 0666);
+    fd = open("historico.txt", O_APPEND | O_WRONLY, 0666);
 
      for(i = 0; currentTasks[i] != NULL; i++){
         if(task == currentTasks[i]->num){
@@ -146,7 +143,7 @@ void history(int fd){
     char buf[MAX];
     int r = 0;
 
-    int fd2 = open("historico.txt",O_RDONLY);
+    int fd2 = open("historico.txt", O_RDONLY);
     lseek(fd2, 0, SEEK_SET);//começar a ler a partir do offset q é 0
         
     while((r = read(fd2,&buf,sizeof(buf)))>0){  
@@ -165,7 +162,7 @@ void readLogs(int fdW, int task){
 	int fd = open("log.idx",O_RDONLY);
 	int fd2 = open("log",O_RDONLY);
 
-	while((r = readLine(fd, &c, size)) > 0){
+	while((r = readLine(fd, c, size)) > 0){
 		if(c[0] == '#'){
 			bzero(aux, size);
 			for(i = 1; c[i] != ':' && i < size; i++)//encontrar o numero antes de dois pontos que é o num da tarefa
@@ -193,13 +190,12 @@ void readLogs(int fdW, int task){
 			}
 		}		
 	}
-    
+    close(fd);
     i = j = 0;
     ret = malloc(sizeof(char)*size);
     bzero(ret, size);
-
+    
 	while((r = read(fd2, &log, 1)) > 0){
-
 		if(i >= res){ 
 			if(i == fim) //quando se encontra o numero máximo de linhas da tarefa pedida sau do ciclo para escrever o resultado no fifo
 				break;
@@ -209,7 +205,7 @@ void readLogs(int fdW, int task){
 
 			if(j == size){ //caso se exceda o tamanho 128, para realocar
 				char *auxlogs = strdup(ret);
-				size  = size*2;
+				size = size*2;
 				ret = malloc(sizeof(char)*size);
 				bzero(ret, size);
 				for(int k = 0; k < strlen(auxlogs); k++)
@@ -224,8 +220,10 @@ void readLogs(int fdW, int task){
 			i++;
 	}
 
+    close(fd2);
+
 	ret[j++] = '\n';
-	write(fdW, ret, j); //escrever no fifo 
+	write(fdW, ret, j); //escrever no fifo   
 }
 
 int main(int argc, char *argv[]){
@@ -239,6 +237,23 @@ int main(int argc, char *argv[]){
     signal(SIGALRM, alarm_handler);
     signal(SIGCHLD, sigchild_handler);
 
+    //Buscar ao historico quantas tarefas ja foram efetuadas
+    int hist_fd = open("historico.txt", O_CREAT | O_RDONLY, 0666);
+    int max = -1, x = 0;
+    char aux[200];
+    while((x = readLine(hist_fd, aux, sizeof(aux))) > 0){
+       char *linha = strdup(aux);
+       char *tok = strtok(linha, ",");
+       if(tok != NULL){
+           char *num = tok + 1;
+           int n = atoi(num);
+           if(n > max)
+               max = n;
+       }
+    }
+    if(max != -1)
+        numTask = max + 1;
+    close(hist_fd);
 
     //Criação dos fifos
     //Fifo usado pelo servidor para ler o que vem do cliente 

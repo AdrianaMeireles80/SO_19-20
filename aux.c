@@ -6,6 +6,7 @@
 #include <sys/types.h>
 
 #define MAX_COMANDOS 10
+#define MAX 1024
 
 //Função para ler uma linha
 int readLine(int fd, char* buf, int tam){
@@ -88,20 +89,19 @@ int mysystem(char *coms, int nr_tarefa){
     int nr_comandos = 0;
     char *comandos[MAX_COMANDOS];
     char *token;
-    char c;
-    char aux[24];
+    char c, aux[50];
     int fildes[MAX_COMANDOS-1][2];
     int status[MAX_COMANDOS];
     //para escrever po ficheiro log
     int fd = open("log", O_CREAT | O_APPEND | O_RDWR, 0666);
     int fdidx = open("log.idx", O_CREAT | O_APPEND | O_WRONLY, 0666);
-    int r, nr_linhas = 0;
+    int r, nr_linhas = 0, x = 0;
 
     for(int i = 0; (token = strsep(&coms, "|")) != NULL; i++){
         comandos[i] = strdup(token);
         nr_comandos++;
     }
-
+    
     if(nr_comandos == 1){
         switch (fork()){
             case -1:
@@ -110,16 +110,17 @@ int mysystem(char *coms, int nr_tarefa){
             case 0:
                 write(fd, "\n", 1);
                 lseek(fd, 0, SEEK_SET);
-               
+
                 while((r = read(fd, &c, sizeof(c))) > 0){
                     if(c == '\n')
                         nr_linhas++;
                 }
                
-                bzero(aux, 24);
-                sprintf(aux, "#%d: %d\n", nr_tarefa, nr_linhas);
-                lseek(fdidx, 0, SEEK_END);
-                write(fdidx, &aux, strlen(aux));
+                bzero(aux, sizeof(aux));
+                x = sprintf(aux, "#%d: %d\n", nr_tarefa, nr_linhas);
+
+                write(fdidx, aux, x);
+                close(fdidx);
 
                 dup2(fd, 1); //redirecionar po ficheiro log
                 close(fd);
@@ -165,10 +166,11 @@ int mysystem(char *coms, int nr_tarefa){
                                 nr_linhas++;
                         }
                
-                        bzero(aux, 24);
-                        sprintf(aux, "#%d: %d\n", nr_tarefa, nr_linhas);
-                        lseek(fdidx, 0, SEEK_END);
-                        write(fdidx, &aux, strlen(aux)); //escrever o num de cada tarefa e a respetiva posição no ficheiro log.idx
+                        bzero(aux, sizeof(aux));
+                        x = sprintf(aux, "#%d: %d\n", nr_tarefa, nr_linhas);
+
+                        write(fdidx, &aux, x); //escrever o num de cada tarefa e a respetiva posição no ficheiro log.idx
+                        close(fdidx);
 
                         dup2(fd, 1); //redirecionar a execução dos comandos para o ficheiro log
                         close(fd);
