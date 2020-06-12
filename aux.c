@@ -109,15 +109,15 @@ int mysystem(char *coms, int nr_tarefa){
                 return -1;
             case 0:
                 write(fd, "\n", 1);
-                lseek(fd, 0, SEEK_SET);
-
+                int ind = lseek(fd, 0, SEEK_END);
+                /*
                 while((r = read(fd, &c, sizeof(c))) > 0){
                     if(c == '\n')
                         nr_linhas++;
-                }
+                }*/
                
                 bzero(aux, sizeof(aux));
-                x = sprintf(aux, "#%d: %d\n", nr_tarefa, nr_linhas);
+                x = sprintf(aux, "#%d: %d\n", nr_tarefa, ind);
 
                 write(fdidx, aux, x);
                 close(fdidx);
@@ -159,15 +159,15 @@ int mysystem(char *coms, int nr_tarefa){
                         return -1;
                     case 0:
                         write(fd, "\n", 1);
-                        lseek(fd, 0, SEEK_SET);
-               
+                        int ind2 = lseek(fd, 0, SEEK_END);
+                        /*
                         while((r = read(fd, &c, sizeof(c))) > 0){
                             if(c == '\n')
                                 nr_linhas++;
-                        }
+                        }*/
                
                         bzero(aux, sizeof(aux));
-                        x = sprintf(aux, "#%d: %d\n", nr_tarefa, nr_linhas);
+                        x = sprintf(aux, "#%d: %d\n", nr_tarefa, ind2);
 
                         write(fdidx, &aux, x); //escrever o num de cada tarefa e a respetiva posição no ficheiro log.idx
                         close(fdidx);

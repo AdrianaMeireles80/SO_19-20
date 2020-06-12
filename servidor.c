@@ -153,6 +153,52 @@ void history(int fd){
     close(fd2);
 }
 
+
+void logs(int fdW, int task){
+    int fdidx = open("log.idx", O_RDONLY);
+    int fdlog = open("log", O_RDONLY);
+    char linha[MAX], *token, *tok;
+    char *campos[2];
+    int r = 0, inicio = 0, fim = -1, flag = 0;
+
+    while((r = readLine(fdidx, linha, sizeof(linha))) > 0){
+        token = strdup(linha);
+        for(int i = 0; (tok = strsep(&token, ":")) != NULL; i++){
+            campos[i] = strdup(tok+1);
+        } 
+        if(task == atoi(campos[0])){
+            inicio = atoi(campos[1]);
+            flag = 1;
+        }
+        else if(flag){
+            fim = atoi(campos[1]);
+            break;
+        }
+    }
+
+    if(fim == -1){
+        fim = lseek(fdlog, 0, SEEK_END);
+    }
+
+    int bytesOutput = fim - inicio;
+    char out[MAX], aux[MAX];
+    int j = 0;
+
+    lseek(fdlog, inicio, SEEK_SET); //começa no inicio do output
+    bzero(out, MAX);
+    while((r = readLine(fdlog, aux, sizeof(aux))) > 0){
+        j += r;
+        if(j >= bytesOutput)
+            break;
+
+        strcat(out, aux);
+        bzero(aux, MAX);
+    }
+    write(fdW, out, bytesOutput);
+
+}
+
+
 void readLogs(int fdW, int task){
 	int size = 128;
 	char c[size], aux[size];
@@ -318,7 +364,7 @@ int main(int argc, char *argv[]){
             }
             else if (!strcmp(tokens[0], "output")){
                 printf("OUTPUT\n");
-                readLogs(fd_fifoW, atoi(tokens[1]));
+                logs(fd_fifoW, atoi(tokens[1]));
             }
         }
     }
