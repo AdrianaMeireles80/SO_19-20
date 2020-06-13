@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include "def.c"
 #include "aux.c"
+#include "argus.h"
 
 int maxInactivity = -1;
 int maxExecution = -1;
