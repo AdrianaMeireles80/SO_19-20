@@ -8,7 +8,6 @@
 #define MAX_COMANDOS 10
 #define MAX 1024
 
-//Função para ler uma linha
 int readLine(int fd, char* buf, int tam){
 	int j = 0;
 	while(j < tam && read(fd,buf+j,1) > 0 && buf[j] != '\n')
@@ -21,7 +20,6 @@ int readLine(int fd, char* buf, int tam){
 	return j;
 }
 
-//Função que efetua os redirecionamentos > >> 2> 2>>
 int redirect(char * op, char * file){
     int fd;
     if (strcmp(op,">") == 0){
@@ -53,7 +51,6 @@ int redirect(char * op, char * file){
     return 0;
 }
 
-//Função que executa um comando
 int exec_command(char* com){
     char *argumentos[20];
     char *token;
@@ -84,7 +81,6 @@ int exec_command(char* com){
     return ret;
 }
 
-//Função que executa uma série de comandos separados por pipes anónimos
 int mysystem(char *coms, int nr_tarefa){
     int nr_comandos = 0;
     char *comandos[MAX_COMANDOS];
@@ -92,7 +88,7 @@ int mysystem(char *coms, int nr_tarefa){
     char c, aux[50];
     int fildes[MAX_COMANDOS-1][2];
     int status[MAX_COMANDOS];
-    //para escrever po ficheiro log
+
     int fd = open("log", O_CREAT | O_APPEND | O_RDWR, 0666);
     int fdidx = open("log.idx", O_CREAT | O_APPEND | O_WRONLY, 0666);
     int r, nr_linhas = 0, x = 0;
@@ -118,7 +114,7 @@ int mysystem(char *coms, int nr_tarefa){
                 write(fdidx, aux, x);
                 close(fdidx);
 
-                dup2(fd, 1); //redirecionar po ficheiro log
+                dup2(fd, 1);
                 close(fd);
 
                 exec_command(comandos[0]);
@@ -160,10 +156,10 @@ int mysystem(char *coms, int nr_tarefa){
                         bzero(aux, sizeof(aux));
                         x = sprintf(aux, "#%d: %d\n", nr_tarefa, ind2);
 
-                        write(fdidx, &aux, x); //escrever o num de cada tarefa e a respetiva posição no ficheiro log.idx
+                        write(fdidx, &aux, x);
                         close(fdidx);
 
-                        dup2(fd, 1); //redirecionar a execução dos comandos para o ficheiro log
+                        dup2(fd, 1);
                         close(fd);
 
                         dup2(fildes[j-1][0],0);
@@ -205,7 +201,9 @@ int mysystem(char *coms, int nr_tarefa){
     for(int w = 0; w < nr_comandos; w++){
         wait(&status[w]);
         if(WIFEXITED(status[w])){
-            printf("[PAI] Filho saiu com status %d\n", WEXITSTATUS(status[w]));
+            char buf[50];
+            int n = sprintf(buf,"[PAI] Filho saiu com status %d\n", WEXITSTATUS(status[w]));
+            write(1, buf, n);
         }
     }
     for(int w = 0; w < nr_comandos; w++){

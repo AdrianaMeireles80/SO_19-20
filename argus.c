@@ -1,20 +1,12 @@
-#include <stdio.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <string.h>
 #include "argus.h"
 
-#define MAX 1024
-
-
-void helpGuide(){
+void helpGuide(int type){
     char coms[MAX];
     int n;
-    n = sprintf(coms, "tempo-inactividade segs\ntempo-execucao segs\nexecutar 'p1 | p2 ... | pn'\nlistar\nterminar taskNum\nhistorico\n");
+    if(type == 1)
+        n = sprintf(coms, "-i segs\n-m segs\n-e \"p1 | p2 ... | pn\"\n-l\n-t taskNum\n-r\n");
+    if(type == 2)
+        n = sprintf(coms, "tempo-inactividade segs\ntempo-execucao segs\nexecutar \"p1 | p2 ... | pn\"\nlistar\nterminar taskNum\nhistorico\n");
     write(1, &coms, n);
 }
 
@@ -72,7 +64,7 @@ char* parseLinha(char* args[]){
         comandos = strdup(com);
     }
     else if(!strcmp(args[i], "-h")){
-        helpGuide();
+        helpGuide(1);
     }
     else if(!strcmp(args[i], "-o") && args[i+1] != NULL){
         bzero(com, MAX);
@@ -113,7 +105,7 @@ int main(int argc, char *argv[]){
                 while((r = read(0, &buf, sizeof(buf))) > 0){
                     char *com = strdup(buf);
                     if(strcmp(com, "ajuda\n") == 0)
-                        helpGuide();
+                        helpGuide(2);
                     else if(parseCommand(com)){
                         write(fd_fifoW, &buf, r);
 
@@ -134,8 +126,6 @@ int main(int argc, char *argv[]){
                 char *coms = parseLinha(args);
 
                 if(strlen(coms) > 0){
-                    write(1, coms, strlen(coms));
-
                     write(fd_fifoW, coms, strlen(coms));
                     bzero(answer, MAX);
                     if((r = read(fd_fifoR,&answer,sizeof(answer))) > 0)

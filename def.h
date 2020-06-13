@@ -1,3 +1,6 @@
+#ifndef __DEF__
+#define __DEF__
+
 typedef struct{
     int num; //Nr da tarefa
     char * commands; //tarefa a executar
@@ -5,3 +8,5 @@ typedef struct{
 }*Task;
 
 Task newTask(int n, char * com, int pid);
+
+#endif

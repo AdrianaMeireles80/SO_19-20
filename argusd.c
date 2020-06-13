@@ -1,19 +1,9 @@
-#include <stdio.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/wait.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <string.h>
-#include <stdlib.h>
-#include "def.c"
-#include "aux.c"
 #include "argus.h"
 
 int maxInactivity = -1;
 int maxExecution = -1;
 int indexCur = 0;
-Task *currentTasks; //Array de tasks a executar
+Task *currentTasks;
 
 
 void removeTask(int pid){
@@ -23,7 +13,7 @@ void removeTask(int pid){
     while(currentTasks[i] != NULL && currentTasks[i]->pid != pid){
         i++;
     }
-    if(currentTasks[i] != NULL){ //se encontrou a task
+    if(currentTasks[i] != NULL){
         for(j = i; currentTasks[j] != NULL && currentTasks[j+1] != NULL; j++)
         currentTasks[j] = currentTasks[j+1];
         currentTasks[j] = NULL;
@@ -39,7 +29,7 @@ int numCurrentTasks(){
     return n;
 }
 
-//HANDLER DO ALARM - para o max execuçao
+
 void alarm_handler(int signum){
     int fd, n = 0;
     char buf[MAX];
@@ -55,7 +45,7 @@ void alarm_handler(int signum){
     _exit(1);
 }
 
-//HANDLER DO SIGCHLD - para remover as tarefas que ja acabaram
+
 void sigchild_handler(int signum){
     int status, child;
     child = wait(&status);
@@ -82,17 +72,12 @@ void executeTask(int fd, Task t) {
         perror("fork");
         break;
     case 0:
-        currentTasks[pos]->pid = getpid(); // atualiza aqui tbm para no handler do alarm conseguir buscar a task
-        printf("NA FILA: tarefa %d a executar %s pelo processo %d\n", currentTasks[pos]->num,
-         currentTasks[pos]->commands, currentTasks[pos]->pid); 
-        printf("%d tarefas na fila\n", numCurrentTasks());
-        //se ao fim deste tempo o processo ainda estiver a executar ao receber o sinal o processo da exit
+        currentTasks[pos]->pid = getpid();
         if(maxExecution != -1)
             alarm(maxExecution); 
 
-        //Executar
         int ret = mysystem(strdup(t->commands), t->num);
-        //Escrever no historico
+
         int fd2 = open("historico.txt", O_APPEND | O_WRONLY, 0666);
         x = sprintf(out, "#%d, concluida : %s\n", t->num, t->commands);
         write(fd2, out, x);
@@ -100,7 +85,7 @@ void executeTask(int fd, Task t) {
 
         _exit(ret);
     default:
-        currentTasks[pos]->pid = f; //Atualizar a tarefa com o pid do filho, que é quem a esta a executar
+        currentTasks[pos]->pid = f;
         break;
     }
 }
@@ -145,8 +130,8 @@ void history(int fd){
     int r = 0;
 
     int fd2 = open("historico.txt", O_RDONLY);
-    lseek(fd2, 0, SEEK_SET);//começar a ler a partir do offset q é 0
-        
+    lseek(fd2, 0, SEEK_SET);
+
     while((r = read(fd2,&buf,sizeof(buf)))>0){  
         write(fd,&buf,r);
         bzero(buf,MAX);
@@ -181,11 +166,13 @@ void logs(int fdW, int task){
         fim = lseek(fdlog, 0, SEEK_END);
     }
 
+    close(fdidx);
+
     int bytesOutput = fim - inicio;
     char out[MAX], aux[MAX];
     int j = 0;
 
-    lseek(fdlog, inicio, SEEK_SET); //começa no inicio do output
+    lseek(fdlog, inicio, SEEK_SET);
     bzero(out, MAX);
     while((r = readLine(fdlog, aux, sizeof(aux))) > 0){
         j += r;
@@ -195,6 +182,7 @@ void logs(int fdW, int task){
         strcat(out, aux);
         bzero(aux, MAX);
     }
+    close(fdlog);
     write(fdW, out, bytesOutput);
 
 }
@@ -210,7 +198,7 @@ int main(int argc, char *argv[]){
     signal(SIGALRM, alarm_handler);
     signal(SIGCHLD, sigchild_handler);
 
-    //Buscar ao historico quantas tarefas ja foram efetuadas
+    
     int hist_fd = open("historico.txt", O_CREAT | O_RDONLY, 0666);
     int max = -1, x = 0;
     char aux[200];
@@ -228,17 +216,15 @@ int main(int argc, char *argv[]){
         numTask = max + 1;
     close(hist_fd);
 
-    //Criação dos fifos
-    //Fifo usado pelo servidor para ler o que vem do cliente 
+
     if (mkfifo("fifo1", 0666) == -1){
         perror("mkfifo");
     }
-    //Fifo usado pelo servidor para enviar respostas para o cliente 
+
     if (mkfifo("fifo2", 0666) == -1){
         perror("mkfifo");
     }
 
-    //Abertura dos fifos
     fd_fifoR = open("fifo1", O_RDONLY);
     fd_fifoW = open("fifo2", O_WRONLY);
 
@@ -252,7 +238,7 @@ int main(int argc, char *argv[]){
         if((r = readLine(fd_fifoR, buf, sizeof(buf))) > 0){
             buf[r] = '\0';
             command = strdup(buf);
-            printf("LEU DO PIPE: %s\n", command);
+
             int i = 0;
             while((token = strsep(&command, " ")) != NULL){
                 tokens[i] = token;
@@ -265,33 +251,46 @@ int main(int argc, char *argv[]){
             }
             else if (!strcmp(tokens[0], "tempo-execucao")){
                 maxExecution = atoi(tokens[1]);
-                write(fd_fifoW, "Execucao Max definida\n", 22);            
+                write(fd_fifoW, "Execução máxima definida\n", 29);            
             }
             else if (!strcmp(tokens[0], "executar")){
                 int pos = strlen(tokens[0]) + 2;
                 char *task = strdup(buf + pos);
                 task[strlen(task)-1] = '\0';
-                printf("EXECUTAR TAREFA: %s\n", task);
                 Task t = newTask(numTask, task, -1);
                 numTask++;
+
+                char b[50];
+                sprintf(b,"EXECUTAR TAREFA: %s\n", task);
+                write(1, b, strlen(b));
+
                 executeTask(fd_fifoW, t);
             }
             else if (!strcmp(tokens[0], "listar")){
-	            printf("LISTAR TAREFAS\n");         
+                write(1,"LISTAR TAREFAS\n",16);      
                 listTasks(fd_fifoW);
             }
             else if (!strcmp(tokens[0], "terminar")){
                 int task = atoi(tokens[1]);
-                printf("TERMINAR TAREFA %d\n", task);
+
+                char b[50];
+                sprintf(b,"TERMINAR TAREFA %d\n", task);
+                write(1, b, strlen(b));
+                write(fd_fifoW, "Terminar tarefa\n", 17);
                 endTask(task);
             }
             else if (!strcmp(tokens[0], "historico")){
-                printf("HISTORICO DE TAREFAS\n");
+                write(1,"HISTORICO DE TAREFAS\n",22);
                 history(fd_fifoW);
             }
             else if (!strcmp(tokens[0], "output")){
-                printf("OUTPUT\n");
-                logs(fd_fifoW, atoi(tokens[1]));
+                int task = atoi(tokens[1]);
+
+                char b[50];
+                sprintf(b,"OUTPUT DA TAREFA %d\n", task);
+                write(1, b, strlen(b));
+
+                logs(fd_fifoW, task);
             }
         }
     }
