@@ -8,11 +8,12 @@ void helpGuide(int type){
         strcat(coms, "-i segs\t[Definir Tempo de Inatividade]\n-m segs\t[Definir Tempo de Execução Máximo]\n");
         strcat(coms,"-e \"p1 | ... | pn\"\t[Executar Tarefa]\n-l\t\t[Listar Tarefas]\n");
         strcat(coms,"-t taskNum\t[Terminar Tarefa]\n-r\t\t[Consultar Histórico]\n");
+        strcat(coms,"-o taskNum\t[Consultar Output]\n");
     }
     if(type == 2){
         strcat(coms,"tempo-inactividade segs\ntempo-execucao segs\n");
         strcat(coms,"executar \"p1 | ... | pn\"\nlistar\n");
-        strcat(coms,"terminar taskNum\nhistorico\n");
+        strcat(coms,"terminar taskNum\nhistorico\noutput taskNum\n\n");
     }
 
     write(1, &coms, strlen(coms));
