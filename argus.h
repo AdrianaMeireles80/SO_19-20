@@ -12,7 +12,6 @@
 #include <stdlib.h>
 #include "def.c"
 #include "aux.c"
-//#include "def.h"
 
 
 #define MAX 1024

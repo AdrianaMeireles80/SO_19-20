@@ -5,7 +5,7 @@ int maxExecution = -1;
 int indexCur = 0;
 Task *currentTasks;
 
-
+//Função que remove tarefa do array de tarefas em execução
 void removeTask(int pid){
     int i = 0;
     int j;
@@ -21,6 +21,7 @@ void removeTask(int pid){
     }
 }
 
+//Função que conta o número de tarefas em execução
 int numCurrentTasks(){
     int n = 0;
     for(int i = 0; currentTasks[i] != NULL; i++)
@@ -29,7 +30,7 @@ int numCurrentTasks(){
     return n;
 }
 
-
+//Handler do alarm
 void alarm_handler(int signum){
     int fd, n = 0;
     char buf[MAX];
@@ -45,7 +46,7 @@ void alarm_handler(int signum){
     _exit(1);
 }
 
-
+//Handler do SIGCHLD
 void sigchild_handler(int signum){
     int status, child;
     child = wait(&status);
@@ -54,7 +55,7 @@ void sigchild_handler(int signum){
 }
 
 
-
+//Função que executa uma tarefa
 void executeTask(int fd, Task t) {
     int f, n = 0, x = 0;
     char answer[100], out[MAX];
@@ -90,6 +91,7 @@ void executeTask(int fd, Task t) {
     }
 }
 
+//Função que lista as tarefas em execução
 void listTasks(int fd){
     int i, n = 0;
     char aux[MAX],ret[MAX];
@@ -109,6 +111,7 @@ void listTasks(int fd){
      
 }
 
+//Função que termina uma tarefa
 void endTask(int task){
     int i, fd, n = 0;
     char buf[MAX];
@@ -125,6 +128,7 @@ void endTask(int task){
     close(fd);
 }
 
+//Função que apresenta o histórico de tarefas
 void history(int fd){
     char buf[MAX];
     int r = 0;
@@ -139,7 +143,7 @@ void history(int fd){
     close(fd2);
 }
 
-
+//Função que apresenta o output de uma tarefa
 void logs(int fdW, int task){
     int fdidx = open("log.idx", O_RDONLY);
     int fdlog = open("log", O_RDONLY);
@@ -198,7 +202,7 @@ int main(int argc, char *argv[]){
     signal(SIGALRM, alarm_handler);
     signal(SIGCHLD, sigchild_handler);
 
-    
+    //Ler do histórico para buscar o nr para a tarefa seguinte
     int hist_fd = open("historico.txt", O_CREAT | O_RDONLY, 0666);
     int max = -1, x = 0;
     char aux[200];
@@ -216,7 +220,7 @@ int main(int argc, char *argv[]){
         numTask = max + 1;
     close(hist_fd);
 
-
+    //Criação dos fifos
     if (mkfifo("fifo1", 0666) == -1){
         perror("mkfifo");
     }
@@ -225,6 +229,7 @@ int main(int argc, char *argv[]){
         perror("mkfifo");
     }
 
+    //Abertura dos fifos
     fd_fifoR = open("fifo1", O_RDONLY);
     fd_fifoW = open("fifo2", O_WRONLY);
 
@@ -235,6 +240,7 @@ int main(int argc, char *argv[]){
 
     while(1){
         bzero(buf,MAX);
+        //Ler do fifo
         if((r = readLine(fd_fifoR, buf, sizeof(buf))) > 0){
             buf[r] = '\0';
             command = strdup(buf);

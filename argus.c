@@ -1,16 +1,24 @@
 #include "argus.h"
 
+//Função que apresenta o menu de ajuda
 void helpGuide(int type){
     char coms[MAX];
-    int n;
-    if(type == 1)
-        n = sprintf(coms, "-i segs\n-m segs\n-e \"p1 | p2 ... | pn\"\n-l\n-t taskNum\n-r\n");
-    if(type == 2)
-        n = sprintf(coms, "tempo-inactividade segs\ntempo-execucao segs\nexecutar \"p1 | p2 ... | pn\"\nlistar\nterminar taskNum\nhistorico\n");
-    write(1, &coms, n);
+
+    if(type == 1){
+        strcat(coms, "-i segs\t[Definir Tempo de Inatividade]\n-m segs\t[Definir Tempo de Execução Máximo]\n");
+        strcat(coms,"-e \"p1 | ... | pn\"\t[Executar Tarefa]\n-l\t\t[Listar Tarefas]\n");
+        strcat(coms,"-t taskNum\t[Terminar Tarefa]\n-r\t\t[Consultar Histórico]\n");
+    }
+    if(type == 2){
+        strcat(coms,"tempo-inactividade segs\ntempo-execucao segs\n");
+        strcat(coms,"executar \"p1 | ... | pn\"\nlistar\n");
+        strcat(coms,"terminar taskNum\nhistorico\n");
+    }
+
+    write(1, &coms, strlen(coms));
 }
 
-
+//Função que faz parsing de um comando proveniente do stdin
 int parseCommand(char *com){
     int i = 0;
     char *token;
@@ -28,6 +36,7 @@ int parseCommand(char *com){
     else return 0;
 }
 
+//Função que faz parsing de um comando proveniente da linha de comandos
 char* parseLinha(char* args[]){
     char *comandos=malloc(sizeof(char)*MAX);
 

@@ -8,6 +8,7 @@
 #define MAX_COMANDOS 10
 #define MAX 1024
 
+//Função que lê linha
 int readLine(int fd, char* buf, int tam){
 	int j = 0;
 	while(j < tam && read(fd,buf+j,1) > 0 && buf[j] != '\n')
@@ -20,6 +21,7 @@ int readLine(int fd, char* buf, int tam){
 	return j;
 }
 
+//Função que efetua os redirecionamentos
 int redirect(char * op, char * file){
     int fd;
     if (strcmp(op,">") == 0){
@@ -51,6 +53,7 @@ int redirect(char * op, char * file){
     return 0;
 }
 
+//Função que executa um comando
 int exec_command(char* com){
     char *argumentos[20];
     char *token;
@@ -81,6 +84,7 @@ int exec_command(char* com){
     return ret;
 }
 
+//Função que executa uma sequência de comandos separados por pipes
 int mysystem(char *coms, int nr_tarefa){
     int nr_comandos = 0;
     char *comandos[MAX_COMANDOS];
@@ -124,7 +128,7 @@ int mysystem(char *coms, int nr_tarefa){
     }
     else {
         for(int j = 0; j < nr_comandos; j++){
-            if (j == 0){
+            if (j == 0){ //1º comando
                 if(pipe(fildes[j]) != 0){
                         perror("pipe");
                         return -1;
@@ -144,7 +148,7 @@ int mysystem(char *coms, int nr_tarefa){
                         close(fildes[j][1]);
                 }
             }
-            else if (j == nr_comandos - 1){
+            else if (j == nr_comandos - 1){ //Último comando
                 switch(fork()){
                     case -1:
                         perror("fork");
