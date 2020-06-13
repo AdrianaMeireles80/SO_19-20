@@ -110,11 +110,7 @@ int mysystem(char *coms, int nr_tarefa){
             case 0:
                 write(fd, "\n", 1);
                 int ind = lseek(fd, 0, SEEK_END);
-                /*
-                while((r = read(fd, &c, sizeof(c))) > 0){
-                    if(c == '\n')
-                        nr_linhas++;
-                }*/
+            
                
                 bzero(aux, sizeof(aux));
                 x = sprintf(aux, "#%d: %d\n", nr_tarefa, ind);
@@ -160,12 +156,7 @@ int mysystem(char *coms, int nr_tarefa){
                     case 0:
                         write(fd, "\n", 1);
                         int ind2 = lseek(fd, 0, SEEK_END);
-                        /*
-                        while((r = read(fd, &c, sizeof(c))) > 0){
-                            if(c == '\n')
-                                nr_linhas++;
-                        }*/
-               
+                                     
                         bzero(aux, sizeof(aux));
                         x = sprintf(aux, "#%d: %d\n", nr_tarefa, ind2);
 

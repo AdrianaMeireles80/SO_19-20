@@ -6,22 +6,11 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+#include "argus.h"
 
 #define MAX 1024
 
-/*
-int readLine(int fd, char* buf, int tam){
-    int j = 0;
-    while(j < tam && read(fd,buf+j,1) > 0 && buf[j] != '\n')
-        j++;
 
-    if(j >= tam)    
-        buf[j] = '\0';
-    else buf[j+1] = '\0';
-
-    return j;
-}
-*/
 void helpGuide(){
     char coms[MAX];
     int n;

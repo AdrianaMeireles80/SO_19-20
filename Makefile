@@ -1,8 +1,8 @@
 CC=gcc
 
 make:	def.c aux.c
-	$(CC) -o servidor servidor.c
-	$(CC) -o argus cliente.c
+	$(CC) -o argusd argusd.c
+	$(CC) -o argus argus.c
 
 clean:
-	rm -f argus servidor historico.txt fifo1 fifo2 log log.idx
+	rm -f argus argusd historico.txt fifo1 fifo2 log log.idx
