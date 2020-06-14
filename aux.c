@@ -54,7 +54,7 @@ int redirect(char * op, char * file){
 }
 
 //Função que executa um comando
-int exec_command(char* com){
+int executaComando(char* com){
     char *argumentos[20];
     char *token;
     int ret = 0;
@@ -89,13 +89,13 @@ int mysystem(char *coms, int nr_tarefa){
     int nr_comandos = 0;
     char *comandos[MAX_COMANDOS];
     char *token;
-    char c, aux[50];
+    char aux[50];
     int fildes[MAX_COMANDOS-1][2];
     int status[MAX_COMANDOS];
 
     int fd = open("log", O_CREAT | O_APPEND | O_RDWR, 0666);
     int fdidx = open("log.idx", O_CREAT | O_APPEND | O_WRONLY, 0666);
-    int r, nr_linhas = 0, x = 0;
+    int x = 0;
 
     for(int i = 0; (token = strsep(&coms, "|")) != NULL; i++){
         comandos[i] = strdup(token);
@@ -121,7 +121,7 @@ int mysystem(char *coms, int nr_tarefa){
                 dup2(fd, 1);
                 close(fd);
 
-                exec_command(comandos[0]);
+                executaComando(comandos[0]);
                                
                 _exit(0);
         }
@@ -142,7 +142,7 @@ int mysystem(char *coms, int nr_tarefa){
                         dup2(fildes[j][1],1);
                         close(fildes[j][1]);
 
-                        exec_command(comandos[j]);
+                        executaComando(comandos[j]);
                         _exit(0);
                     default:
                         close(fildes[j][1]);
@@ -169,7 +169,7 @@ int mysystem(char *coms, int nr_tarefa){
                         dup2(fildes[j-1][0],0);
                         close(fildes[j-1][0]);
 
-                        exec_command(comandos[j]);
+                        executaComando(comandos[j]);
                         _exit(0);
                     default:
                         close(fildes[j-1][0]);
@@ -191,7 +191,7 @@ int mysystem(char *coms, int nr_tarefa){
                         dup2(fildes[j-1][0],0);
                         close(fildes[j-1][0]);  
 
-                        exec_command(comandos[j]);
+                        executaComando(comandos[j]);
                         _exit(0); 
                     default:
                         close(fildes[j-1][0]);

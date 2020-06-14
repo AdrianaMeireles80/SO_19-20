@@ -2,7 +2,6 @@
 
 int maxInactivity = -1;
 int maxExecution = -1;
-int indexCur = 0;
 Task *currentTasks;
 
 //Função que remove tarefa do array de tarefas em execução
@@ -14,10 +13,10 @@ void removeTask(int pid){
         i++;
     }
     if(currentTasks[i] != NULL){
-        for(j = i; currentTasks[j] != NULL && currentTasks[j+1] != NULL; j++)
-        currentTasks[j] = currentTasks[j+1];
+        for(j = i; currentTasks[j] != NULL && currentTasks[j+1] != NULL; j++){
+            currentTasks[j] = currentTasks[j+1];
+        }
         currentTasks[j] = NULL;
-        indexCur--;
     }
 }
 
@@ -119,10 +118,11 @@ void endTask(int task){
 
      for(i = 0; currentTasks[i] != NULL; i++){
         if(task == currentTasks[i]->num){
-            kill(currentTasks[i]->pid, SIGKILL);
-            n = sprintf(buf, "#%d, terminada por cliente : %s\n", task, currentTasks[i]->commands);
-            write(fd,buf,n);
-            
+            if(currentTasks[i]->pid != -1){
+                kill(currentTasks[i]->pid, SIGKILL);
+                n = sprintf(buf, "#%d, terminada por cliente : %s\n", task, currentTasks[i]->commands);
+                write(fd,buf,n);
+            }
         }
     }
     close(fd);
@@ -187,7 +187,10 @@ void logs(int fdW, int task){
         bzero(aux, MAX);
     }
     close(fdlog);
-    write(fdW, out, bytesOutput);
+
+    if(bytesOutput <= 1) //Quando é 1 é só o \n que pomos a separar
+        write(fdW, "Não há output.\n",18);
+    else write(fdW, out, bytesOutput);
 
 }
 
